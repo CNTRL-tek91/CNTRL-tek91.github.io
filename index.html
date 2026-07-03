@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Kcey Stadalman &middot; ML / AI Engineer. Clinical AI, causal inference, and LLM evaluation systems.">
+<title>Kcey Stadalman · ML / AI Engineer</title>
+<style>
+  :root{
+    --paper:#FFFFFF;
+    --ink:#0A0A0A;
+    --grey:#8C8C8C;
+    --grey-line:#E2E2E2;
+    --red:#FF3B2F;
+    --dot-off-l:transparent;
+    --dot-off-d:transparent;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;}
+  }
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",Menlo,Consolas,monospace;}
+  a{color:inherit;}
+  ::selection{background:var(--red);color:#fff;}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 1.75rem;}
+  section{position:relative;}
+
+  .section-dark{background-color:var(--ink);}
+
+  /* fixed, viewport-constant dot grid. mix-blend-mode:difference against pure white
+     means the rendered color is always the true inverse of whatever sits behind it,
+     computed live by the compositor -- no pixel sampling needed. */
+  .dot-overlay{
+    position:fixed;inset:0;z-index:9999;pointer-events:none;
+    mix-blend-mode:difference;
+    background-image:radial-gradient(circle, #ffffff 1.6px, transparent 1.6px);
+    /* fixed count across the viewport: 13 dots wide, 6 dots tall, at any window size */
+    background-size:calc(100% / 13) calc(100% / 6);
+  }
+
+  /* ---------- viewfinder frame corners ---------- */
+  .frame{position:relative;}
+  .frame .cn{position:absolute;width:16px;height:16px;pointer-events:none;}
+  .frame .cn.tl{top:0;left:0;border-top:1.5px solid currentColor;border-left:1.5px solid currentColor;}
+  .frame .cn.tr{top:0;right:0;border-top:1.5px solid currentColor;border-right:1.5px solid currentColor;}
+  .frame .cn.bl{bottom:0;left:0;border-bottom:1.5px solid currentColor;border-left:1.5px solid currentColor;}
+  .frame .cn.br{bottom:0;right:0;border-bottom:1.5px solid currentColor;border-right:1.5px solid currentColor;}
+
+  /* ---------- dot-matrix type ---------- */
+  .dotword{display:inline-flex;flex-wrap:wrap;align-items:flex-start;}
+  .dotchar{
+    display:grid;grid-template-columns:repeat(5,var(--dot,7px));grid-template-rows:repeat(7,var(--dot,7px));
+    gap:calc(var(--dot,7px)*0.32);margin-right:calc(var(--dot,7px)*0.85);
+  }
+  .dotchar i{width:var(--dot,7px);height:var(--dot,7px);border-radius:50%;background:var(--dot-off,var(--dot-off-l));display:block;}
+  .dotchar i.on{background:var(--dot-on,var(--ink));}
+  .dotchar i.on.rd{background:var(--red);}
+  .dotspace{width:calc(var(--dot,7px)*2.6);flex:none;}
+
+  /* ---------- nav ---------- */
+  header.site{position:sticky;top:0;z-index:50;background:rgba(255,255,255,0.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--grey-line);}
+  .navrow{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 0;}
+  .logo{display:flex;align-items:center;text-decoration:none;color:var(--ink);}
+  .logo .dotword{flex:none;}
+  nav.primary{display:flex;align-items:center;gap:0.4rem;}
+  .navlink{
+    position:relative;display:inline-grid;place-items:center;isolation:isolate;
+    padding:0.55rem 1rem;border-radius:2px;text-decoration:none;color:var(--ink);
+  }
+  .navlink::before{
+    content:"";position:absolute;inset:0;z-index:0;border-radius:2px;
+    background:var(--red);opacity:0;transition:opacity .28s ease;
+  }
+  .navlink:hover::before,.navlink:focus-visible::before{opacity:1;}
+  .navlink-label,.navlink-dots{grid-area:1/1;position:relative;z-index:1;transition:opacity .18s ease;}
+  .navlink-label{font-size:0.76rem;letter-spacing:0.1em;text-transform:uppercase;opacity:0.55;}
+  .navlink-dots{opacity:0;pointer-events:none;}
+  .navlink:hover .navlink-label,.navlink:focus-visible .navlink-label{opacity:0;}
+  .navlink:hover .navlink-dots,.navlink:focus-visible .navlink-dots{opacity:1;}
+  .navtoggle{display:none;background:none;border:1px solid var(--grey-line);border-radius:2px;width:2.2rem;height:2.2rem;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);}
+  @media (max-width:760px){
+    nav.primary{position:fixed;inset:57px 0 auto 0;background:#fff;border-bottom:1px solid var(--grey-line);flex-direction:column;align-items:flex-start;gap:0;padding:0.25rem 1.75rem 1.25rem;transform:translateY(-8px);opacity:0;pointer-events:none;transition:transform .18s ease,opacity .18s ease;}
+    nav.primary.open{transform:translateY(0);opacity:1;pointer-events:auto;}
+    .navlink{justify-items:start;padding:0.75rem 0;width:100%;border-bottom:1px solid var(--grey-line);}
+    .navlink-label{opacity:0.7;}
+    .navtoggle{display:flex;}
+  }
+
+  /* ---------- eyebrow / labels ---------- */
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:0.5rem;
+    font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;
+    font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--grey);margin-bottom:1.1rem;
+  }
+  .eyebrow .rd{width:6px;height:6px;border-radius:50%;background:var(--red);flex:none;}
+
+  /* ---------- hero ---------- */
+  .hero{padding:5rem 0 4.5rem;}
+  .hero-frame{padding:2.75rem 1.5rem 1rem;color:var(--ink);}
+  .hero .dotword{overflow-x:auto;max-width:100%;padding-bottom:0.25rem;}
+  .hero-cap{
+    font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;
+    font-size:0.75rem;color:var(--grey);margin:1.1rem 0 0;letter-spacing:0.04em;
+  }
+  .hero-lede{font-size:1.1rem;color:#3A3A3A;max-width:44ch;margin:2rem 0 0;}
+  .hero-lede b{font-weight:600;}
+  .hero-ctas{display:flex;gap:0.9rem;flex-wrap:wrap;margin-top:2rem;}
+  .btn{
+    font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;
+    font-size:0.78rem;letter-spacing:0.05em;text-transform:uppercase;text-decoration:none;
+    padding:0.85rem 1.4rem;border-radius:2px;display:inline-flex;align-items:center;gap:0.6rem;font-weight:600;
+    transition:background .15s ease,color .15s ease,border-color .15s ease;
+  }
+  .btn.solid{background:var(--ink);color:#fff;}
+  .btn.solid:hover{background:var(--red);}
+  .btn.outline{border:1px solid var(--ink);color:var(--ink);}
+  .btn.outline:hover{border-color:var(--red);color:var(--red);}
+  .btn.on-dark{border:1px solid rgba(255,255,255,0.35);color:#fff;}
+  .btn.on-dark:hover{border-color:var(--red);color:var(--red);}
+  .btn.solid.rd{background:var(--red);color:#fff;}
+  .btn.solid.rd:hover{opacity:0.88;}
+
+  /* ---------- section head ---------- */
+  .section-pad{padding:5rem 0;}
+  .section-head-simple{display:flex;align-items:center;gap:0.85rem;padding-bottom:1.5rem;margin-bottom:3rem;border-bottom:1px solid var(--grey-line);}
+  .section-head-simple.on-dark{border-bottom-color:rgba(255,255,255,0.16);}
+  .section-head-simple .rd{width:9px;height:9px;border-radius:50%;background:var(--red);flex:none;}
+
+  /* ---------- work / spec sheets ---------- */
+  .specs{display:flex;flex-direction:column;}
+  .spec{border-top:1px solid var(--grey-line);padding:3rem 0;display:grid;grid-template-columns:0.95fr 1.15fr;gap:2.5rem;}
+  .specs .spec:last-child{border-bottom:1px solid var(--grey-line);}
+  @media (max-width:860px){.spec{grid-template-columns:1fr;}}
+  .spec-id{font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;font-size:0.78rem;color:var(--grey);letter-spacing:0.08em;margin-bottom:0.9rem;}
+  .spec-name.dotword{margin-bottom:0.9rem;overflow-x:auto;max-width:100%;padding-bottom:0.15rem;}
+  .spec-thesis{color:#3A3A3A;font-size:0.98rem;max-width:48ch;margin:0 0 1.4rem;}
+  .spec-tags{display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.4rem;}
+  .tag{
+    font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;
+    font-size:0.68rem;letter-spacing:0.04em;text-transform:uppercase;color:#3A3A3A;
+    border:1px solid var(--grey-line);border-radius:2px;padding:0.28rem 0.55rem;
+  }
+  .spec-link{
+    font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;
+    font-size:0.8rem;text-decoration:none;color:var(--ink);display:inline-flex;align-items:center;gap:0.45rem;
+    letter-spacing:0.04em;
+  }
+  .spec-link svg{width:12px;height:12px;transition:transform .15s ease;}
+  .spec-link:hover{color:var(--red);}
+  .spec-link:hover svg{transform:translate(2px,-2px);}
+
+  .spec-table{border-top:1px solid var(--grey-line);}
+  .spec-row{display:flex;align-items:baseline;gap:0.6rem;padding:0.7rem 0;border-bottom:1px dashed var(--grey-line);}
+  .spec-row .lbl{
+    font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;
+    font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--grey);white-space:nowrap;
+  }
+  .spec-row .fill{flex:1;border-bottom:1px dotted #C9C9C9;height:0;transform:translateY(-3px);}
+  .spec-row .val{
+    font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;
+    font-size:0.86rem;font-weight:700;color:var(--red);font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+
+  .spec.oss-block{display:block;}
+  .oss-list{border-top:1px solid var(--grey-line);margin-top:1.4rem;}
+  .oss-empty{
+    font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;
+    font-size:0.82rem;color:var(--grey);padding:1.1rem 0;margin:0;
+  }
+  .oss-row{
+    display:flex;align-items:baseline;justify-content:space-between;gap:1.5rem;
+    padding:0.9rem 0;border-bottom:1px dashed var(--grey-line);
+  }
+  .oss-row .name{font-size:0.92rem;color:var(--ink);font-weight:600;}
+  .oss-row .repo{
+    font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;
+    font-size:0.72rem;color:var(--grey);display:block;margin-top:0.2rem;
+  }
+  .oss-row .oss-link{
+    font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;
+    font-size:0.8rem;color:var(--ink);text-decoration:none;white-space:nowrap;
+    display:inline-flex;align-items:center;gap:0.4rem;
+  }
+  .oss-row .oss-link svg{width:12px;height:12px;transition:transform .15s ease;}
+  .oss-row .oss-link:hover{color:var(--red);}
+  .oss-row .oss-link:hover svg{transform:translate(2px,-2px);}
+
+  /* ---------- about / glyph panel (dark) ---------- */
+  .about-grid{display:grid;grid-template-columns:0.9fr 1.1fr;gap:2.5rem;align-items:center;}
+  @media (max-width:860px){.about-grid{grid-template-columns:1fr;}}
+  .glyph-frame{color:rgba(255,255,255,0.5);padding:2rem;}
+  .glyph-canvas-wrap{display:flex;justify-content:center;padding:0.5rem 0 1.5rem;}
+  .glyph-canvas-wrap canvas{width:100%;max-width:280px;height:auto;}
+
+  .about-copy{color:rgba(255,255,255,0.82);}
+  .about-copy p{font-size:0.98rem;color:rgba(255,255,255,0.68);max-width:52ch;}
+  .about-copy p b{color:#fff;font-weight:600;}
+  .about-tags{display:flex;flex-wrap:wrap;gap:0.5rem;margin:1.5rem 0 2rem;}
+  .about-tags .tag{color:rgba(255,255,255,0.75);border-color:rgba(255,255,255,0.18);}
+
+  .log{list-style:none;margin:0;padding:0;border-top:1px solid rgba(255,255,255,0.14);}
+  .log li{display:grid;grid-template-columns:6rem 1fr;gap:1rem;padding:0.85rem 0;border-bottom:1px solid rgba(255,255,255,0.14);font-size:0.87rem;}
+  .log .date{font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;font-size:0.73rem;color:var(--red);font-variant-numeric:tabular-nums;padding-top:0.15rem;}
+  .log .role{color:#fff;font-weight:600;}
+  .log .org{color:rgba(255,255,255,0.55);font-weight:400;}
+
+  /* ---------- contact ---------- */
+  .contact{padding:5.5rem 0;}
+  .contact-inner{display:flex;flex-direction:column;align-items:flex-start;gap:1.6rem;}
+  .contact .dotword{overflow-x:auto;max-width:100%;}
+  .contact-links{display:flex;gap:0.9rem;flex-wrap:wrap;}
+
+  /* ---------- footer ---------- */
+  footer{border-top:1px solid var(--grey-line);padding:2.25rem 0;}
+  .footer-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;}
+  .footer-left{display:flex;align-items:center;gap:0.6rem;}
+  .footer-left .rd{width:7px;height:7px;border-radius:50%;background:var(--red);flex:none;}
+  .footer-row .mono{font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;font-size:0.72rem;color:var(--grey);letter-spacing:0.03em;}
+  .social{display:flex;gap:1.1rem;}
+  .social a{color:var(--ink);opacity:0.55;transition:opacity .15s ease,color .15s ease;}
+  .social a:hover{opacity:1;color:var(--red);}
+  .social svg{width:17px;height:17px;display:block;}
+
+  .reveal{opacity:0;transform:translateY(16px);transition:opacity .55s ease,transform .55s ease;}
+  .reveal.in{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap navrow">
+    <a class="logo" href="#top">
+      <span class="dotword" data-text="KS" style="--dot:2.6px;--dot-on:var(--red);"></span>
+    </a>
+    <nav class="primary" id="primaryNav">
+      <a href="#work" class="navlink">
+        <span class="navlink-label">Work</span>
+        <span class="navlink-dots dotword" data-text="WORK" style="--dot:2.3px;--dot-on:#fff;"></span>
+      </a>
+      <a href="#about" class="navlink">
+        <span class="navlink-label">About</span>
+        <span class="navlink-dots dotword" data-text="ABOUT" style="--dot:2.3px;--dot-on:#fff;"></span>
+      </a>
+      <a href="#contact" class="navlink">
+        <span class="navlink-label">Contact</span>
+        <span class="navlink-dots dotword" data-text="CONTACT" style="--dot:2.3px;--dot-on:#fff;"></span>
+      </a>
+    </nav>
+    <button class="navtoggle" id="navToggle" aria-label="Open menu" aria-expanded="false" aria-controls="primaryNav">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M1 4H15M1 8H15M1 12H15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="wrap">
+      <div class="frame hero-frame">
+        <span class="cn tl"></span><span class="cn tr"></span><span class="cn bl"></span><span class="cn br"></span>
+        <div class="eyebrow"><span class="rd"></span>Spec Sheet &middot; ML / AI Engineer</div>
+        <div class="dotword" id="dotHero" data-text="KCEY STADALMAN" style="--dot:9px;"></div>
+        <p class="hero-cap mono" id="dotHeroCap">&middot; rendered in dots, not pixels</p>
+        <p class="hero-lede">M.S. Computer Science building <b>clinical AI, causal inference, and LLM evaluation</b> systems, end to end. Based in California, open to relocation.</p>
+        <div class="hero-ctas">
+          <a class="btn solid" href="#work">View Work</a>
+          <a class="btn outline" href="#contact">Contact</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="work" class="section-pad wrap reveal">
+    <div class="section-head-simple">
+      <span class="rd"></span>
+      <div class="dotword" data-text="SELECTED WORK" style="--dot:7px;"></div>
+    </div>
+
+    <div class="specs">
+
+      <article class="spec">
+        <div>
+          <div class="spec-id">(01) &middot; CLINICAL AI</div>
+          <div class="spec-name dotword" data-text="PRAXIS" style="--dot:7px;"></div>
+          <p class="spec-thesis">A five-stage clinical platform: multimodal outcome prediction, causal treatment-effect analysis, and a QLoRA-tuned note summarizer, served behind FastAPI.</p>
+          <div class="spec-tags">
+            <span class="tag">PyTorch</span><span class="tag">BioClinicalBERT</span><span class="tag">EconML</span><span class="tag">QLoRA</span><span class="tag">FAISS</span><span class="tag">FastAPI</span>
+          </div>
+          <a class="spec-link" href="https://github.com/CNTRL-tek91/PRAXIS" target="_blank" rel="noopener">
+            View repository
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 12L12 4M12 4H6M12 4V10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+        <div class="spec-table">
+          <div class="spec-row"><span class="lbl">Records processed</span><span class="fill"></span><span class="val">3.56M</span></div>
+          <div class="spec-row"><span class="lbl">Length-of-stay MAE</span><span class="fill"></span><span class="val">0.40 DAYS</span></div>
+          <div class="spec-row"><span class="lbl">Mortality AUROC (transformer)</span><span class="fill"></span><span class="val">0.58</span></div>
+          <div class="spec-row"><span class="lbl">QLoRA fine-tune footprint</span><span class="fill"></span><span class="val">~4 GB</span></div>
+          <div class="spec-row"><span class="lbl">Training time</span><span class="fill"></span><span class="val">74 MIN</span></div>
+        </div>
+      </article>
+
+      <article class="spec">
+        <div>
+          <div class="spec-id">(02) &middot; LLM EVALUATION</div>
+          <div class="spec-name dotword" data-text="AEGIS" style="--dot:7px;"></div>
+          <p class="spec-thesis">A multi-judge LLM-as-a-judge framework: a calibrated Bradley-Terry reward model plus a statistical bias auditor, running end to end on one 8&nbsp;GB GPU.</p>
+          <div class="spec-tags">
+            <span class="tag">Phi-3-mini</span><span class="tag">PEFT / QLoRA</span><span class="tag">Platt Scaling</span><span class="tag">SciPy</span><span class="tag">DeBERTa-v3</span>
+          </div>
+          <a class="spec-link" href="https://github.com/CNTRL-tek91/AEGIS" target="_blank" rel="noopener">
+            View repository
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 12L12 4M12 4H6M12 4V10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+        <div class="spec-table">
+          <div class="spec-row"><span class="lbl">Human-preference agreement</span><span class="fill"></span><span class="val">73.3%</span></div>
+          <div class="spec-row"><span class="lbl">Calibration error (ECE)</span><span class="fill"></span><span class="val">0.016</span></div>
+          <div class="spec-row"><span class="lbl">Positional bias detected</span><span class="fill"></span><span class="val">P = 0.008</span></div>
+          <div class="spec-row"><span class="lbl">Peak training VRAM</span><span class="fill"></span><span class="val">8.35 GB</span></div>
+          <div class="spec-row"><span class="lbl">Unit tests passing</span><span class="fill"></span><span class="val">34 / 34</span></div>
+        </div>
+      </article>
+
+      <article class="spec">
+        <div>
+          <div class="spec-id">(03) &middot; CAUSAL / DATA SCIENCE</div>
+          <div class="spec-name dotword" data-text="PRISM" style="--dot:7px;"></div>
+          <p class="spec-thesis">Churn intelligence past the classifier: survival modeling, causal uplift, and lifetime value combine to rank who is actually worth saving.</p>
+          <div class="spec-tags">
+            <span class="tag">lifelines</span><span class="tag">Causal Forest</span><span class="tag">XGBoost</span><span class="tag">MLflow</span><span class="tag">Power BI</span>
+          </div>
+          <a class="spec-link" href="https://github.com/CNTRL-tek91/PRISM" target="_blank" rel="noopener">
+            View repository
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 12L12 4M12 4H6M12 4V10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+        <div class="spec-table">
+          <div class="spec-row"><span class="lbl">Concordance index</span><span class="fill"></span><span class="val">0.895</span></div>
+          <div class="spec-row"><span class="lbl">Revenue saved vs. risk-only</span><span class="fill"></span><span class="val">+75%</span></div>
+          <div class="spec-row"><span class="lbl">Persuadable segment</span><span class="fill"></span><span class="val">17.8%</span></div>
+          <div class="spec-row"><span class="lbl">Mean 12-month LTV</span><span class="fill"></span><span class="val">$88.30</span></div>
+        </div>
+      </article>
+
+      <article class="spec oss-block">
+        <div class="spec-id">(04) &middot; OPEN SOURCE</div>
+        <div class="spec-name dotword" data-text="CONTRIBUTIONS" style="--dot:7px;"></div>
+        <p class="spec-thesis">Merged pull requests to public repositories. This list fills in as they land.</p>
+        <div class="oss-list" id="ossList">
+          <!-- Add entries here as pull requests merge, one oss-row per entry:
+          <div class="oss-row">
+            <div>
+              <span class="name">Short description of the fix or feature</span>
+              <span class="repo">owner/repo &middot; #123</span>
+            </div>
+            <a class="oss-link" href="https://github.com/owner/repo/pull/123" target="_blank" rel="noopener">
+              View PR
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 12L12 4M12 4H6M12 4V10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+          -->
+          <p class="oss-empty">No public contributions yet. This section updates as pull requests merge.</p>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <section id="about" class="section-pad section-dark reveal">
+    <div class="wrap">
+      <div class="section-head-simple on-dark">
+        <span class="rd"></span>
+        <div class="dotword" data-text="ABOUT" style="--dot:7px;--dot-off:var(--dot-off-d);--dot-on:#fff;"></div>
+      </div>
+
+      <div class="about-grid">
+        <div class="frame glyph-frame">
+          <span class="cn tl"></span><span class="cn tr"></span><span class="cn bl"></span><span class="cn br"></span>
+          <div class="glyph-canvas-wrap"><canvas id="glyphCanvas" aria-label="Portrait rendered as a dot matrix, decoded from ASCII art"></canvas></div>
+        </div>
+
+        <div class="about-copy">
+          <p>I build the parts of an ML system most people skip: the causal validation, the calibration curve, the bias audit, the served endpoint. <b>PRAXIS, AEGIS, and PRISM</b> push three different problems (clinical outcomes, LLM judgment, subscriber churn) through that same full loop, each on a single consumer GPU.</p>
+          <p>Currently evaluating and ranking LLM outputs for RLHF training data at DataAnnotation.tech, which turned into a live extension of the calibration and bias-auditing work in AEGIS.</p>
+
+          <div class="about-tags">
+            <span class="tag">Python</span><span class="tag">PyTorch</span><span class="tag">Hugging Face</span><span class="tag">SQL</span><span class="tag">EconML</span><span class="tag">lifelines</span><span class="tag">FAISS</span><span class="tag">Docker</span><span class="tag">MLflow</span><span class="tag">SHAP</span>
+          </div>
+
+          <ul class="log">
+            <li><span class="date">2025&ndash;NOW</span><span><span class="role">LLM Evaluation Specialist</span><br><span class="org">DataAnnotation.tech</span></span></li>
+            <li><span class="date">FALL 25</span><span><span class="role">M.S. Computer Science</span><br><span class="org">Cal Poly Pomona &middot; 3.8 GPA</span></span></li>
+            <li><span class="date">SU 23</span><span><span class="role">Research Member</span><br><span class="org">CSUF ASSURE-US Research</span></span></li>
+            <li><span class="date">SP 23</span><span><span class="role">B.S. Computer Science</span><br><span class="org">CSU Fullerton</span></span></li>
+            <li><span class="date">SU 22</span><span><span class="role">Project Lead</span><br><span class="org">CSUF ASSURE-US Research</span></span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="contact wrap reveal">
+    <div class="contact-inner">
+      <div class="eyebrow"><span class="rd"></span>Contact</div>
+      <div class="dotword" data-text="LET'S TALK" style="--dot:8px;"></div>
+      <div class="contact-links">
+        <a class="btn solid rd" href="mailto:kceystad7@outlook.com">kceystad7@outlook.com</a>
+        <a class="btn outline" href="https://github.com/CNTRL-tek91" target="_blank" rel="noopener">github.com/CNTRL-tek91</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <div class="footer-row">
+    <div class="footer-left"><span class="rd"></span><span class="mono">&copy; 2026 KCEY STADALMAN &middot; DESIGNED IN DOTS</span></div>
+    <div class="social">
+      <a href="mailto:kceystad7@outlook.com" aria-label="Email">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M4 6.5L12 13L20 6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </a>
+      <a href="https://github.com/CNTRL-tek91" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2C6.48 2 2 6.58 2 12.19C2 16.68 4.87 20.47 8.84 21.8C9.34 21.9 9.5 21.58 9.5 21.31C9.5 21.07 9.49 20.24 9.49 19.36C7 19.91 6.48 18.24 6.48 18.24C6.08 17.19 5.5 16.92 5.5 16.92C4.7 16.36 5.56 16.37 5.56 16.37C6.44 16.44 6.91 17.31 6.91 17.31C7.7 18.7 8.98 18.3 9.5 18.06C9.58 17.47 9.81 17.07 10.07 16.85C8.09 16.62 6 15.83 6 12.32C6 11.32 6.35 10.51 6.93 9.87C6.84 9.65 6.53 8.72 7.02 7.47C7.02 7.47 7.78 7.22 9.48 8.39C10.2 8.19 10.96 8.09 11.72 8.09C12.48 8.09 13.24 8.19 13.96 8.39C15.66 7.22 16.42 7.47 16.42 7.47C16.91 8.72 16.6 9.65 16.51 9.87C17.09 10.51 17.44 11.32 17.44 12.32C17.44 15.84 15.34 16.61 13.35 16.84C13.68 17.13 13.97 17.7 13.97 18.57C13.97 19.81 13.96 20.97 13.96 21.31C13.96 21.58 14.12 21.91 14.63 21.8C18.6 20.46 21.46 16.68 21.46 12.19C21.46 6.58 16.98 2 12 2Z" fill="currentColor"/></svg>
+      </a>
+    </div>
+  </div>
+</footer>
+
+<div class="dot-overlay" aria-hidden="true"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ 5x7 dot-matrix bitmap font ============ */
+  var FONT = {
+    "A":[".###.","#...#","#...#","#####","#...#","#...#","#...#"],
+    "B":["####.","#...#","#...#","####.","#...#","#...#","####."],
+    "C":[".####","#....","#....","#....","#....","#....",".####"],
+    "D":["####.","#...#","#...#","#...#","#...#","#...#","####."],
+    "E":["#####","#....","#....","####.","#....","#....","#####"],
+    "F":["#####","#....","#....","####.","#....","#....","#...."],
+    "G":[".####","#....","#....","#.###","#...#","#...#",".####"],
+    "H":["#...#","#...#","#...#","#####","#...#","#...#","#...#"],
+    "I":["#####","..#..","..#..","..#..","..#..","..#..","#####"],
+    "J":["..###","...#.","...#.","...#.","...#.","#..#.",".##.."],
+    "K":["#...#","#..#.","#.#..","##...","#.#..","#..#.","#...#"],
+    "L":["#....","#....","#....","#....","#....","#....","#####"],
+    "M":["#...#","##.##","#.#.#","#...#","#...#","#...#","#...#"],
+    "N":["#...#","##..#","#.#.#","#..##","#...#","#...#","#...#"],
+    "O":[".###.","#...#","#...#","#...#","#...#","#...#",".###."],
+    "P":["####.","#...#","#...#","####.","#....","#....","#...."],
+    "Q":[".###.","#...#","#...#","#...#","#.#.#","#..#.",".##.#"],
+    "R":["####.","#...#","#...#","####.","#.#..","#..#.","#...#"],
+    "S":[".####","#....","#....",".###.","....#","....#","####."],
+    "T":["#####","..#..","..#..","..#..","..#..","..#..","..#.."],
+    "U":["#...#","#...#","#...#","#...#","#...#","#...#",".###."],
+    "V":["#...#","#...#","#...#","#...#","#...#",".#.#.","..#.."],
+    "W":["#...#","#...#","#...#","#.#.#","#.#.#","#.#.#",".#.#."],
+    "X":["#...#","#...#",".#.#.","..#..",".#.#.","#...#","#...#"],
+    "Y":["#...#","#...#",".#.#.","..#..","..#..","..#..","..#.."],
+    "Z":["#####","....#","...#.","..#..",".#...","#....","#####"],
+    "0":[".###.","#...#","#..##","#.#.#","##..#","#...#",".###."],
+    "1":["..#..",".##..","..#..","..#..","..#..","..#..","#####"],
+    "2":[".###.","#...#","....#","...#.","..#..",".#...","#####"],
+    "3":["####.","....#","....#","..##.","....#","....#","####."],
+    "4":["...#.","..##.",".#.#.","#..#.","#####","...#.","...#."],
+    "5":["#####","#....","#....","####.","....#","....#","####."],
+    "6":[".###.","#....","#....","####.","#...#","#...#",".###."],
+    "7":["#####","....#","...#.","..#..",".#...",".#...",".#..."],
+    "8":[".###.","#...#","#...#",".###.","#...#","#...#",".###."],
+    "9":[".###.","#...#","#...#",".####","....#","....#",".###."],
+    "(":["...#.","..#..",".#...",".#...",".#...","..#..","...#."],
+    ")":[".#...","..#..","...#.","...#.","...#.","..#..",".#..."],
+    ".":[".....",".....",".....",".....",".....",".....","..#.."],
+    ",":[".....",".....",".....",".....",".....","..#..",".#..."],
+    "-":[".....",".....",".....","#####",".....",".....","....."],
+    "/":["....#","...#.","...#.","..#..",".#...",".#...","#...."],
+    ":":[".....","..#..",".....",".....","..#..",".....","....."],
+    "'":[".#...",".#...",".....",".....",".....",".....","....."],
+    "%":["#...#","....#","...#.","..#..",".#...","#....","#...#"],
+    "+":[".....","..#..","..#..","#####","..#..","..#..","....."]
+  };
+
+  function buildDotChar(pattern){
+    var el = document.createElement("span");
+    el.className = "dotchar";
+    for (var r=0;r<7;r++){
+      var row = pattern[r];
+      for (var c=0;c<5;c++){
+        var dot = document.createElement("i");
+        if (row[c] === "#") dot.className = "on";
+        el.appendChild(dot);
+      }
+    }
+    return el;
+  }
+
+  function renderDotWord(container){
+    var text = (container.getAttribute("data-text") || container.textContent || "").toUpperCase();
+    container.textContent = "";
+    var onCount = 0;
+    for (var i=0;i<text.length;i++){
+      var ch = text[i];
+      if (ch === " "){
+        var sp = document.createElement("span");
+        sp.className = "dotspace";
+        container.appendChild(sp);
+        continue;
+      }
+      var pattern = FONT[ch];
+      if (!pattern) continue;
+      container.appendChild(buildDotChar(pattern));
+      for (var k=0;k<pattern.length;k++){ for (var j=0;j<5;j++){ if(pattern[k][j]==="#") onCount++; } }
+    }
+    return onCount;
+  }
+
+  var heroCount = 0;
+  document.querySelectorAll(".dotword").forEach(function(el){
+    var count = renderDotWord(el);
+    if (el.id === "dotHero") heroCount = count;
+  });
+  var cap = document.getElementById("dotHeroCap");
+  if (cap) cap.textContent = "· rendered in " + heroCount + " dots, not pixels";
+
+  /* ============ ASCII (braille) -> dot-matrix portrait ============ */
+  var ASCII_ART = [
+    "⠀⠀⣠⡶⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀",
+    "⠀⣰⣿⠃⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀",
+    "⢸⣿⣯⠀⠀⠀⠀⠀⠀⢠⣴⣿⣿⣿⣿⣦⠀⠀⠀⠀⠀",
+    "⢼⣿⣿⣆⠀⢀⣀⣀⣴⣿⣿⣿⠋⠀⠀⠀⠀⠀⠀⠀⠀",
+    "⢸⣿⣿⣿⣿⣿⣿⣿⠿⠿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀",
+    "⠀⢻⣿⠋⠙⢿⣿⣿⡀⠀⣿⣷⣄⠀⠀⠀⠀⠀⠀⠀⠀",
+    "⠀⢸⠿⢆⣀⣼⣿⣿⣿⣿⡏⠀⢹⠀⠀⠀⠀⠀⠀⠀⠀",
+    "⠀⠀⡀⣨⡙⠟⣩⣙⣡⣬⣴⣤⠏⠀⠀⠀⠀⠀⠀⣀⡀",
+    "⠀⠀⠙⠿⣿⣿⣿⣿⣿⣿⣿⣧⠀⠀⠀⣀⣤⣾⣿⣿⡇",
+    "⠀⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣇⠀⢸⣿⣿⠿⠿⠛⠃",
+    "⠀⠀⠀⠀⢠⣿⣿⢹⣿⢹⣿⣿⣿⢰⣿⠿⠃⠀⠀⠀⠀",
+    "⠀⢀⣀⣤⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡛⠀⠀⠀⠀⠀⠀",
+    "⠀⠻⠿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⠿⠛⠓⠀⠀⠀⠀⠀",
+    "⠀⠀⠀⠀⠀⠀⠀⠉⠀⠉⠈⠁⠀⠀⠀⠀⠀⠀"
+  ];
+
+  function decodeBrailleGrid(lines){
+    var rows = lines.length * 4;
+    var cols = 0;
+    lines.forEach(function(l){ cols = Math.max(cols, [...l].length); });
+    cols = cols * 2;
+    var grid = [];
+    for (var r=0;r<rows;r++){ grid.push(new Array(cols).fill(0)); }
+    lines.forEach(function(line, li){
+      var chars = [...line];
+      chars.forEach(function(ch, ci){
+        var code = ch.codePointAt(0);
+        var m = code - 0x2800;
+        if (m < 0 || m > 255) return;
+        var baseR = li*4, baseC = ci*2;
+        if (m & 0x01) grid[baseR+0][baseC+0] = 1;
+        if (m & 0x02) grid[baseR+1][baseC+0] = 1;
+        if (m & 0x04) grid[baseR+2][baseC+0] = 1;
+        if (m & 0x08) grid[baseR+0][baseC+1] = 1;
+        if (m & 0x10) grid[baseR+1][baseC+1] = 1;
+        if (m & 0x20) grid[baseR+2][baseC+1] = 1;
+        if (m & 0x40) grid[baseR+3][baseC+0] = 1;
+        if (m & 0x80) grid[baseR+3][baseC+1] = 1;
+      });
+    });
+    return grid;
+  }
+
+  function animateGlyphPortrait(canvas, grid){
+    var rows = grid.length, cols = grid[0].length;
+    var pitch = 8;
+    canvas.width = cols * pitch;
+    canvas.height = rows * pitch;
+    var ctx = canvas.getContext("2d");
+
+    var onCells = [];
+    for (var r=0;r<rows;r++){ for (var c=0;c<cols;c++){ if (grid[r][c]) onCells.push({r:r, c:c}); } }
+
+    /* a curved wavefront travels top -> bottom through the grid on a loop.
+       the front's row position is offset per-column by a sine curve, so the
+       middle of the wave leads the edges -- an actual ripple shape, not a
+       flat scan line. only the individual "on" dots caught near the front
+       light up (with a real blur glow); nothing is drawn as a background
+       wash. a hard cap on simultaneously-blurred dots keeps cost bounded no
+       matter how dense the art gets at any given row. */
+    var band = 4;             // half-width of the ripple front, in grid rows
+    var curveAmp = 3;         // how far the wave's center leads its edges, in grid rows
+    var cycleMs = 8200;       // time for one full top-to-bottom pass
+    var pad = band + curveAmp;
+    var travel = rows + pad * 2;
+    var MAX_BLUR = 24;        // hard cap on simultaneous shadowBlur draws
+
+    var running = true;
+    var rafId = null;
+
+    function frame(t){
+      ctx.fillStyle = "#0A0A0A";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      var progress = (t % cycleMs) / cycleMs;
+      var rippleRow = progress * travel - pad;
+
+      var glowing = [];
+      onCells.forEach(function(cell){
+        var curve = curveAmp * Math.sin(Math.PI * cell.c / (cols - 1));
+        var dist = Math.abs(cell.r - (rippleRow + curve));
+        if (dist < band){
+          glowing.push({ cell: cell, s: (Math.cos(Math.PI * dist / band) + 1) / 2 });
+        } else {
+          var cx = cell.c * pitch + pitch / 2, cy = cell.r * pitch + pitch / 2;
+          ctx.beginPath();
+          ctx.fillStyle = "#F2F2F2";
+          ctx.arc(cx, cy, pitch * 0.34, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      glowing.sort(function(a, b){ return b.s - a.s; });
+      glowing.forEach(function(item, i){
+        var cx = item.cell.c * pitch + pitch / 2, cy = item.cell.r * pitch + pitch / 2;
+        var s = item.s;
+        ctx.beginPath();
+        if (i < MAX_BLUR){
+          ctx.shadowColor = "#FF3B2F";
+          ctx.shadowBlur = 3 + s * 10;
+          ctx.fillStyle = "rgba(255,59,47," + (0.5 + 0.5 * s).toFixed(3) + ")";
+          ctx.arc(cx, cy, pitch * (0.30 + 0.12 * s), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        } else {
+          var g = Math.round(59 + (242 - 59) * (1 - s));
+          var b = Math.round(47 + (242 - 47) * (1 - s));
+          ctx.fillStyle = "rgba(255," + g + "," + b + "," + (0.85 + 0.15 * s).toFixed(3) + ")";
+          ctx.arc(cx, cy, pitch * (0.32 + 0.08 * s), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      if (running) rafId = requestAnimationFrame(frame);
+    }
+
+    frame(0);
+    document.addEventListener("visibilitychange", function(){
+      running = !document.hidden;
+      if (running) rafId = requestAnimationFrame(frame);
+      else if (rafId) cancelAnimationFrame(rafId);
+    });
+  }
+
+  var glyphCanvas = document.getElementById("glyphCanvas");
+  if (glyphCanvas){
+    animateGlyphPortrait(glyphCanvas, decodeBrailleGrid(ASCII_ART));
+  }
+
+  /* ============ nav toggle ============ */
+  var toggle = document.getElementById("navToggle");
+  var nav = document.getElementById("primaryNav");
+  toggle.addEventListener("click", function(){
+    var open = nav.classList.toggle("open");
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  nav.querySelectorAll("a").forEach(function(a){
+    a.addEventListener("click", function(){ nav.classList.remove("open"); toggle.setAttribute("aria-expanded","false"); });
+  });
+
+  /* ============ scroll reveal ============ */
+  if ("IntersectionObserver" in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if (e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, {threshold:0.1});
+    document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
+  } else {
+    document.querySelectorAll(".reveal").forEach(function(el){ el.classList.add("in"); });
+  }
+})();
+</script>
+
+</body>
+</html>
