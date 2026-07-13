@@ -183,6 +183,9 @@
     font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;
     font-size:0.72rem;color:var(--grey);display:block;margin-top:0.2rem;
   }
+  .oss-row .oss-status{
+    font-size:0.68rem;font-weight:700;letter-spacing:0.04em;color:var(--red);margin-left:0.5rem;
+  }
   .oss-row .oss-link{
     font-family:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",monospace;
     font-size:0.8rem;color:var(--ink);text-decoration:none;white-space:nowrap;
@@ -353,7 +356,7 @@
       <article class="spec oss-block">
         <div class="spec-id">(04) &middot; OPEN SOURCE</div>
         <div class="spec-name dotword" data-text="CONTRIBUTIONS" style="--dot:7px;"></div>
-        <p class="spec-thesis">Merged pull requests to public repositories. This list fills in as they land.</p>
+        <p class="spec-thesis">Pull requests to public repositories, open and merged. This list fills in as they land.</p>
         <div class="oss-list" id="ossList">
           <!-- Add entries here as pull requests merge, one oss-row per entry:
           <div class="oss-row">
@@ -367,7 +370,16 @@
             </a>
           </div>
           -->
-          <p class="oss-empty">No public contributions yet. This section updates as pull requests merge.</p>
+          <div class="oss-row">
+            <div>
+              <span class="name">Fixed accelerate launch CLI silently parsing --parallelism_config_sp_seq_length_is_variable False as True</span>
+              <span class="repo">huggingface/accelerate &middot; #4104<span class="oss-status">OPEN</span></span>
+            </div>
+            <a class="oss-link" href="https://github.com/huggingface/accelerate/pull/4104" target="_blank" rel="noopener">
+              View PR
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 12L12 4M12 4H6M12 4V10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
         </div>
       </article>
 
